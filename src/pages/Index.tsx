@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Car, Search } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,36 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { BackgroundDecoration } from '@/components/DecorativeElements';
 import Navigation from '@/components/Navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [registration, setRegistration] = useState('');
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="app-container">
+        <BackgroundDecoration />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-white text-xl">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!user) {
+    return null;
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

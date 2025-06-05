@@ -9,7 +9,87 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      cars: {
+        Row: {
+          created_at: string
+          engine_size: string | null
+          fuel_type: string | null
+          id: string
+          is_taxed: boolean | null
+          make: string | null
+          model: string | null
+          mot_expiry_date: string | null
+          mot_valid: boolean | null
+          registration: string
+          tax_expiry_date: string | null
+          tyre_pressure: string | null
+          tyre_size: string | null
+          updated_at: string
+          user_id: string
+          year: number | null
+        }
+        Insert: {
+          created_at?: string
+          engine_size?: string | null
+          fuel_type?: string | null
+          id?: string
+          is_taxed?: boolean | null
+          make?: string | null
+          model?: string | null
+          mot_expiry_date?: string | null
+          mot_valid?: boolean | null
+          registration: string
+          tax_expiry_date?: string | null
+          tyre_pressure?: string | null
+          tyre_size?: string | null
+          updated_at?: string
+          user_id: string
+          year?: number | null
+        }
+        Update: {
+          created_at?: string
+          engine_size?: string | null
+          fuel_type?: string | null
+          id?: string
+          is_taxed?: boolean | null
+          make?: string | null
+          model?: string | null
+          mot_expiry_date?: string | null
+          mot_valid?: boolean | null
+          registration?: string
+          tax_expiry_date?: string | null
+          tyre_pressure?: string | null
+          tyre_size?: string | null
+          updated_at?: string
+          user_id?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
