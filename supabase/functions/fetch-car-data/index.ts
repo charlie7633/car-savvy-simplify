@@ -1,7 +1,6 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.10';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,27 +21,45 @@ serve(async (req) => {
 
     // Clean registration number (remove spaces and convert to uppercase)
     const cleanReg = registration.replace(/\s+/g, '').toUpperCase();
+    console.log('Cleaned registration:', cleanReg);
+
+    const apiKey = Deno.env.get('DVLA_API_KEY');
+    if (!apiKey) {
+      throw new Error('DVLA API key not configured');
+    }
+
+    console.log('Making request to DVLA API...');
 
     // Fetch vehicle data from DVLA API
     const vehicleResponse = await fetch(`https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': Deno.env.get('DVLA_API_KEY') || '',
+        'X-API-Key': apiKey,
       },
       body: JSON.stringify({
         registrationNumber: cleanReg
       })
     });
 
+    console.log('DVLA API response status:', vehicleResponse.status);
+
     if (!vehicleResponse.ok) {
+      const errorText = await vehicleResponse.text();
+      console.log('DVLA API error response:', errorText);
+      
       if (vehicleResponse.status === 404) {
         throw new Error('Vehicle not found. Please check the registration number.');
+      } else if (vehicleResponse.status === 403) {
+        throw new Error('API access denied. Please check your DVLA API key and ensure it has the correct permissions.');
+      } else if (vehicleResponse.status === 429) {
+        throw new Error('Too many requests. Please try again later.');
       }
-      throw new Error(`DVLA API error: ${vehicleResponse.status}`);
+      throw new Error(`DVLA API error: ${vehicleResponse.status} - ${errorText}`);
     }
 
     const vehicleData = await vehicleResponse.json();
+    console.log('DVLA API response data:', JSON.stringify(vehicleData, null, 2));
 
     // Extract relevant information
     const carInfo = {
@@ -60,6 +77,8 @@ serve(async (req) => {
       tyre_size: null,
       tyre_pressure: null
     };
+
+    console.log('Processed car info:', JSON.stringify(carInfo, null, 2));
 
     return new Response(JSON.stringify(carInfo), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

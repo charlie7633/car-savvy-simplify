@@ -33,22 +33,24 @@ export const useCarData = () => {
     setLoading(true);
     
     try {
+      // Clean registration number
+      const cleanReg = registration.replace(/\s+/g, '').toUpperCase();
+      
       // First, check if car already exists in database
-      const { data: existingCar } = await supabase
+      const { data: existingCars } = await supabase
         .from('cars')
         .select('*')
         .eq('user_id', user.id)
-        .eq('registration', registration.replace(/\s+/g, '').toUpperCase())
-        .single();
+        .eq('registration', cleanReg);
 
-      if (existingCar) {
+      if (existingCars && existingCars.length > 0) {
         setLoading(false);
-        return existingCar;
+        return existingCars[0];
       }
 
       // Fetch from DVLA API via Edge Function
       const { data, error } = await supabase.functions.invoke('fetch-car-data', {
-        body: { registration }
+        body: { registration: cleanReg }
       });
 
       if (error) {
@@ -70,6 +72,7 @@ export const useCarData = () => {
         .single();
 
       if (saveError) {
+        console.error('Database save error:', saveError);
         throw new Error('Failed to save car data');
       }
 
