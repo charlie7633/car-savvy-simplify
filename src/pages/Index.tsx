@@ -8,11 +8,13 @@ import { toast } from "sonner";
 import { BackgroundDecoration } from '@/components/DecorativeElements';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCarData } from '@/hooks/useCarData';
 
 const Index = () => {
   const [registration, setRegistration] = useState('');
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { fetchAndStoreCar, loading: carLoading } = useCarData();
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -38,7 +40,7 @@ const Index = () => {
     return null;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!registration.trim()) {
@@ -46,11 +48,12 @@ const Index = () => {
       return;
     }
     
-    // In a real app, you would validate the registration format here
+    const carData = await fetchAndStoreCar(registration);
     
-    // Simulate fetching car data
-    toast.success("Car details found!");
-    navigate("/car-details", { state: { registration } });
+    if (carData) {
+      toast.success("Car details found!");
+      navigate("/car-details", { state: { carData } });
+    }
   };
 
   return (
@@ -82,14 +85,16 @@ const Index = () => {
                 className="pill-input text-lg text-center uppercase tracking-wider"
                 placeholder="e.g. AB12CDE"
                 autoComplete="off"
+                disabled={carLoading}
               />
               
               <Button 
                 type="submit" 
+                disabled={carLoading}
                 className="pill-button flex items-center justify-center gap-2 h-14 text-lg"
               >
                 <Search className="h-5 w-5" />
-                Search
+                {carLoading ? 'Searching...' : 'Search'}
               </Button>
             </div>
           </form>

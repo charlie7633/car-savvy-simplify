@@ -1,40 +1,49 @@
 
-import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Car, Calendar, Info, Settings as SettingsIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Car, Calendar, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BackgroundDecoration } from '@/components/DecorativeElements';
 import Navigation from '@/components/Navigation';
-
-// This would typically come from an API
-const mockCarData = {
-  make: 'Mazda',
-  model: '2',
-  year: '2014',
-  engine: '1.5 Litres',
-  fuelType: 'Petrol',
-  tyres: {
-    pressure: '32PSI',
-    size: '85/65',
-  },
-  insurance: {
-    provider: 'XXXXXXXX',
-    validFrom: 'XXXX-XX-XX',
-    validTo: 'XXXX-XX-XX',
-  },
-  mot: {
-    valid: true,
-    validUntil: 'XXXX-XX-XX',
-  },
-  tax: {
-    valid: true,
-  }
-};
+import { CarData } from '@/hooks/useCarData';
+import { useAuth } from '@/contexts/AuthContext';
 
 const CarDetails = () => {
   const location = useLocation();
-  const { registration } = location.state || { registration: 'Unknown' };
-  const carData = mockCarData;
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [carData, setCarData] = useState<CarData | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    const { carData: locationCarData } = location.state || {};
+    if (locationCarData) {
+      setCarData(locationCarData);
+    } else {
+      // If no car data in state, redirect to home
+      navigate('/');
+    }
+  }, [location.state, navigate, user]);
+
+  if (!carData) {
+    return (
+      <div className="app-container">
+        <BackgroundDecoration />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-white text-xl">Loading car details...</div>
+        </div>
+      </div>
+    );
+  }
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'Unknown';
+    return new Date(dateString).toLocaleDateString('en-GB');
+  };
 
   return (
     <div className="app-container">
@@ -57,25 +66,39 @@ const CarDetails = () => {
               
               <div className="w-full md:w-1/2 flex flex-col gap-4">
                 <div>
-                  <h3 className="text-neon-pink font-semibold">YOUR CARS YEAR MAKE AND MODEL</h3>
-                  <p className="text-white text-xl">made in {carData.year}</p>
-                  <p className="text-white text-xl">Model "{carData.model}"</p>
+                  <h3 className="text-neon-pink font-semibold">REGISTRATION</h3>
+                  <p className="text-white text-xl">{carData.registration}</p>
+                </div>
+
+                <div>
+                  <h3 className="text-neon-pink font-semibold">YEAR, MAKE AND MODEL</h3>
+                  <p className="text-white text-xl">
+                    {carData.year ? `Made in ${carData.year}` : 'Year unknown'}
+                  </p>
+                  <p className="text-white text-xl">
+                    {carData.make || 'Make unknown'} {carData.model || 'Model unknown'}
+                  </p>
                 </div>
                 
                 <div>
                   <h3 className="text-neon-pink font-semibold">ENGINE SPECIFICS</h3>
-                  <p className="text-white">your cars engine is {carData.engine} and its fuel type is {carData.fuelType}</p>
+                  <p className="text-white">
+                    Engine: {carData.engine_size || 'Unknown size'}
+                  </p>
+                  <p className="text-white">
+                    Fuel type: {carData.fuel_type || 'Unknown'}
+                  </p>
                 </div>
                 
                 <div>
                   <h3 className="text-neon-pink font-semibold">TYRES</h3>
-                  <p className="text-white">Tyre pressure for the {carData.make} {carData.model} is {carData.tyres.pressure}</p>
-                  <p className="text-white">Tyre size for the {carData.make} {carData.model} is {carData.tyres.size}</p>
+                  <p className="text-white">
+                    Tyre pressure: {carData.tyre_pressure || 'Not available - check manufacturer specs'}
+                  </p>
+                  <p className="text-white">
+                    Tyre size: {carData.tyre_size || 'Not available - check tyre sidewall'}
+                  </p>
                 </div>
-                
-                <Button className="pill-button mt-4 self-start">
-                  COMPARE PLANS
-                </Button>
               </div>
             </div>
           </div>
@@ -91,15 +114,41 @@ const CarDetails = () => {
             <div className="flex flex-col md:flex-row gap-8">
               <div className="w-full md:w-1/2 flex flex-col gap-6">
                 <div>
-                  <h3 className="text-neon-pink font-semibold">INSURANCE</h3>
-                  <p className="text-white">currently insured with "{carData.insurance.provider}"</p>
-                  <p className="text-white">date of insurance from "{carData.insurance.validFrom} to {carData.insurance.validTo}"</p>
+                  <h3 className="text-neon-pink font-semibold mb-3">TAX STATUS</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    {carData.is_taxed ? (
+                      <CheckCircle className="h-5 w-5 text-green-400" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5 text-red-400" />
+                    )}
+                    <p className="text-white">
+                      Vehicle is currently {carData.is_taxed ? 'taxed' : 'not taxed'}
+                    </p>
+                  </div>
+                  {carData.tax_expiry_date && (
+                    <p className="text-white">
+                      Tax expires: {formatDate(carData.tax_expiry_date)}
+                    </p>
+                  )}
                 </div>
                 
                 <div>
-                  <h3 className="text-neon-pink font-semibold">MOT AND TAX STATUS</h3>
-                  <p className="text-white">MOT is valid until {carData.mot.validUntil}</p>
-                  <p className="text-white">vehicle is currently {carData.tax.valid ? 'taxed' : 'not taxed'}</p>
+                  <h3 className="text-neon-pink font-semibold mb-3">MOT STATUS</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    {carData.mot_valid ? (
+                      <CheckCircle className="h-5 w-5 text-green-400" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5 text-red-400" />
+                    )}
+                    <p className="text-white">
+                      MOT is {carData.mot_valid ? 'valid' : 'expired or not found'}
+                    </p>
+                  </div>
+                  {carData.mot_expiry_date && (
+                    <p className="text-white">
+                      MOT expires: {formatDate(carData.mot_expiry_date)}
+                    </p>
+                  )}
                 </div>
               </div>
               
