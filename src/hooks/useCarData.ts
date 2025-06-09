@@ -53,11 +53,15 @@ export const useCarData = () => {
         body: { registration: cleanReg }
       });
 
+      console.log('Edge function response:', { data, error });
+
       if (error) {
-        throw new Error(error.message);
+        console.error('Edge function error:', error);
+        throw new Error(`Edge Function error: ${error.message}`);
       }
 
       if (data.error) {
+        console.error('DVLA API error:', data.error);
         throw new Error(data.error);
       }
 
